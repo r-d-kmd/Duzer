@@ -1,0 +1,23 @@
+ARG VERSION=3.1
+FROM mcr.microsoft.com/dotnet/core/sdk:$VERSION
+
+ARG CONFIGURATION=release
+ENV BUILD_CONFIGURATION release
+ENV BUILD_ENV docker
+
+WORKDIR /source
+ 
+RUN apt-get update
+RUN apt-get install mono-complete -y
+
+ENV PATH="$PATH:/root/.dotnet/tools"
+RUN dotnet tool install --global Paket
+RUN echo $(paket --version) 
+
+WORKDIR /source
+
+ONBUILD COPY paket.dependencies .
+ONBUILD RUN paket restore
+
+ONBUILD COPY ./src/ .
+ONBUILD RUN dotnet publish -c ${BUILD_CONFIGURATION} -o /app
