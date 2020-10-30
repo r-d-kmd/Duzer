@@ -1,0 +1,1 @@
+/Users/rune/Projects/docker/tests/test/build.fsx (113,26)-(113,38): FSharpErrorSeverity.Error FS0039: The value, constructor, namespace or type 'getVarOrNone' is not defined.

@@ -26,37 +26,19 @@ let sdkVersions =
 
 [<RequireQualifiedAccess>]
 type Targets = 
-   Sdk of version:string
-   | Publisher
-   | Runtime of version:string
-   | Build
-   | Push of Targets
-   | PushAll
-   | Generic of name:string
+  Builder
+  | Build
+  | Generic of string
 
 let rec targetName = 
     function
-       | Targets.Sdk version -> 
-            if version = "" then "Sdk"
-            else
-                version |> sprintf "Sdk-%s"
+       Targets.Builder -> "Builder"
        | Targets.Build -> "Build"
-       | Targets.Runtime version -> 
-           if version = "" then "Runtime"
-           else
-               version |> sprintf "Runtime-%s"
-       | Targets.Publisher -> "Publisher"
-       | Targets.Generic name -> name
-       | Targets.Push t -> "Push" + (t |> targetName)
-       | Targets.PushAll -> "Push"
+       | Targets.Generic s -> s
 
 
 let createTagName target = 
-    let targetName = 
-        match target with
-        Targets.Push t ->
-            t |> targetName
-        | _ -> target |> targetName
+    let targetName = target |> targetName
     let tag = 
         match targetName.ToLower().Split('-') |> List.ofArray with
         [] -> failwith "Must have a name"
@@ -123,63 +105,18 @@ let docker command =
         System.String.Join(" ",args) 
     run "docker" "." (arguments.Replace("  "," ").Trim())
 
-create Targets.Build ignore
-create Targets.PushAll ignore
-create <| Targets.Sdk "" <| ignore
-create <| Targets.Runtime "" <| ignore
-create <| Targets.Push(Targets.Sdk "") <| ignore
-create <| Targets.Push(Targets.Runtime "") <| ignore
-
-let getRuntimeFileVersion conf = 
-    let isDebug = conf = DotNet.BuildConfiguration.Debug
-    if isDebug then
-       "runtime-debug"
-    else
-       "runtime"
-
-sdkVersions
-|> List.iter(fun version ->
-    let target = (Targets.Runtime version) 
-    let tag = target |> createTagName
-    create target (fun _ ->
-        let runtimeFileVersion = "Dockerfile.runtime"
-        let buildArgs = ["RUNTIME_VERSION",version]
-        docker <| Build(Some(runtimeFileVersion),tag,buildArgs,Some "runtime")
-        docker <| Build(Some(runtimeFileVersion),tag + "-debugable",buildArgs,None)
-    )
-    
-    let pushTarget = Targets.Push(target)
-    create pushTarget (fun _ -> 
-        docker <| Push tag
-        docker <| Push (tag + "-debugable")
-    )
-
-    target ==> (Targets.Runtime "") |> ignore
-    target ==> Targets.Build |> ignore
-    target ==> pushTarget ==> (Targets.Push(Targets.Runtime "")) ==> Targets.PushAll |> ignore
+create Targets.Builder (fun _ ->
+    let buildArgs = 
+        match Environment.environVarOrNone "FEED_PAT" with
+        None -> []
+        | Some fp -> ["FEED_PAT_ARG",fp]
+    docker <| Build(Some "Dockerfile.builder", "builder",buildArgs ,None)
 )
 
-sdkVersions
-|> List.iter(fun version ->
-    let target = (Targets.Sdk version)
-    let tag = 
-        target
-        |> createTagName
-    create target (fun _ ->   
-        let buildArgs = ["SDK_VERSION",version]
-        let file = Some("Dockerfile.sdk")
-        docker <| Build(file,tag,buildArgs,None)
-    )
-
-    let pushTarget = (Targets.Push(Targets.Sdk version))
-    create pushTarget (fun _ -> docker (Push tag))
-
-    target ==> (Targets.Sdk "") |> ignore
-    target ==> Targets.Build |> ignore
-    target ==> pushTarget ==> (Targets.Push(Targets.Sdk "")) ==> Targets.PushAll |> ignore
+create Targets.Build (fun _ ->
+    docker <| Build(None, "test", [],None)
 )
 
-Targets.Build ?=> Targets.PushAll
 
 Targets.Build
 |> runOrDefaultWithArguments 

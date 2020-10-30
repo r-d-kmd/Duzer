@@ -1,0 +1,9 @@
+FROM builder AS build
+
+
+# final stage/image
+FROM kmdrd/runtime
+WORKDIR /app
+COPY --from=build /app .
+ENV port 8085
+ENTRYPOINT dotnet ${EXECUTABLE}

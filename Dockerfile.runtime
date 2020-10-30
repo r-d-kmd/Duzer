@@ -1,2 +1,22 @@
-ARG VERSION=3.1
-FROM mcr.microsoft.com/dotnet/core/aspnet:$VERSION
+ARG RUNTIME_VERSION=3.1
+FROM mcr.microsoft.com/dotnet/core/aspnet:${RUNTIME_VERSION} as runtime-image
+ARG EXECUTABLE_ARG
+ENV EXECUTABLE = ${EXECUTABLE_ARG}
+ENTRYPOINT dotnet ${EXECUTABLE}
+
+#docker build --target runtime ... to create a production ready image
+FROM runtime-image as runtime
+WORKDIR /app
+ONBUILD COPY --from=build /app . 
+ENV port 8085
+
+#docker build ... to create a debugable image
+FROM runtime-image as debugable-runtime
+ONBUILD COPY --from=runtime /app . 
+ENV port 8085
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends unzip \
+  && apt-get install -y procps \
+  && rm -rf /var/lib/apt/lists/* \ 
+  && curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg

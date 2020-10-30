@@ -1,3 +1,4 @@
+
 #r "paket:
 nuget Fake ~> 5 //
 nuget Fake.Core ~> 5 //
@@ -10,10 +11,8 @@ nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
 
-
 #if !FAKE
-#r "netstandard"
-#r "Facades/netstandard" // https://github.com/ionide/ionide-vscode-fsharp/issues/839#issuecomment-396296095
+
 #endif
 
 open Fake.Core
@@ -49,7 +48,6 @@ let rec targetName =
        | Targets.Generic name -> name
        | Targets.Push t -> "Push" + (t |> targetName)
        | Targets.PushAll -> "Push"
-
 
 let createTagName target = 
     let targetName = 
@@ -118,7 +116,7 @@ let docker command =
             | Some t -> argsWithoutTarget + (sprintf " --target %s ." t)
 
     let arguments = 
-        //replace multiple spaces with just one space
+        
         let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
         System.String.Join(" ",args) 
     run "docker" "." (arguments.Replace("  "," ").Trim())
@@ -183,3 +181,12 @@ Targets.Build ?=> Targets.PushAll
 
 Targets.Build
 |> runOrDefaultWithArguments 
+
+
+#if !FAKE
+
+#endif
+/Users/rune/Projects/docker/build.fsx
+/Users/rune/Projects/docker/.fake/build.fsx/intellisense.fsx
+--define:DOTNETCORE
+--define:FAKE

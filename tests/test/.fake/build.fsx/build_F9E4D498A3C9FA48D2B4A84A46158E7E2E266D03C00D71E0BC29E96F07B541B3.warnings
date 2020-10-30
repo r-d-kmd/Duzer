@@ -1,0 +1,11 @@
+/Users/rune/Projects/docker/tests/test/build.fsx (39,16)-(39,20): FSharpErrorSeverity.Error FS0039: The type 'Targets' does not define the field, constructor or member 'Push'.
+/Users/rune/Projects/docker/tests/test/build.fsx (43,14)-(43,32): FSharpErrorSeverity.Error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+/Users/rune/Projects/docker/tests/test/build.fsx (52,12)-(52,19): FSharpErrorSeverity.Error FS0039: The type 'Targets' does not define the field, constructor or member 'Generic'.
+/Users/rune/Projects/docker/tests/test/build.fsx (55,12)-(55,19): FSharpErrorSeverity.Error FS0039: The type 'Targets' does not define the field, constructor or member 'Generic'.
+/Users/rune/Projects/docker/tests/test/build.fsx (108,15)-(108,20): FSharpErrorSeverity.Error FS0039: The type 'Targets' does not define the field, constructor or member 'Build'. Maybe you want one of the following:
+   Builder
+/Users/rune/Projects/docker/tests/test/build.fsx (113,26)-(113,38): FSharpErrorSeverity.Error FS0039: The value, constructor, namespace or type 'getVarOrNone' is not defined.
+/Users/rune/Projects/docker/tests/test/build.fsx (119,15)-(119,20): FSharpErrorSeverity.Error FS0039: The type 'Targets' does not define the field, constructor or member 'Build'. Maybe you want one of the following:
+   Builder
+/Users/rune/Projects/docker/tests/test/build.fsx (124,8)-(124,13): FSharpErrorSeverity.Error FS0039: The type 'Targets' does not define the field, constructor or member 'Build'. Maybe you want one of the following:
+   Builder
