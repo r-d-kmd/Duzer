@@ -27,8 +27,9 @@ let sdkVersions =
 [<RequireQualifiedAccess>]
 type Targets = 
    Sdk of version:string
-   | Publisher
    | Runtime of version:string
+   | BuildAgent of string
+   | BuildAgents
    | Build
    | Push of Targets
    | PushAll
@@ -45,7 +46,8 @@ let rec targetName =
            if version = "" then "Runtime"
            else
                version |> sprintf "Runtime-%s"
-       | Targets.Publisher -> "Publisher"
+       | Targets.BuildAgent s -> s |> sprintf "BuildAgent %s"
+       | Targets.BuildAgents -> "BuildAgents"
        | Targets.Generic name -> name
        | Targets.Push t -> "Push" + (t |> targetName)
        | Targets.PushAll -> "Push"
@@ -56,6 +58,7 @@ let createTagName target =
         match target with
         Targets.Push t ->
             t |> targetName
+        | Targets.BuildAgent a -> sprintf "buildagent-%s" a
         | _ -> target |> targetName
     let tag = 
         match targetName.ToLower().Split('-') |> List.ofArray with
@@ -98,7 +101,7 @@ type DockerCommand =
     Push of string
     | Build of file:string option * tag:string * buildArgs: (string * string) list * target : string option
 
-let docker command =
+let docker workdir command =
     let arguments = 
         match command with
         Push tag -> sprintf "push %s" tag
@@ -121,13 +124,15 @@ let docker command =
         //replace multiple spaces with just one space
         let args = arguments.Split([|' '|], System.StringSplitOptions.RemoveEmptyEntries)
         System.String.Join(" ",args) 
-    run "docker" "." (arguments.Replace("  "," ").Trim())
+    run "docker" workdir (arguments.Replace("  "," ").Trim())
 
 create Targets.Build ignore
 create Targets.PushAll ignore
 create <| Targets.Sdk "" <| ignore
+create <| Targets.BuildAgents <| ignore
 create <| Targets.Runtime "" <| ignore
 create <| Targets.Push(Targets.Sdk "") <| ignore
+create <| Targets.Push(Targets.BuildAgents) <| ignore
 create <| Targets.Push(Targets.Runtime "") <| ignore
 
 let getRuntimeFileVersion conf = 
@@ -137,26 +142,27 @@ let getRuntimeFileVersion conf =
     else
        "runtime"
 
+let setupTargets target allTarget = 
+    let pushTarget = Targets.Push target
+    let tag = target |> createTagName
+    create pushTarget (fun _ -> docker "." (Push tag))
+    target ?=> pushTarget  |> ignore
+    pushTarget ==> (Targets.Push(allTarget)) ==> Targets.PushAll |> ignore
+    target ==> allTarget |> ignore
+
 sdkVersions
 |> List.iter(fun version ->
-    let target = (Targets.Runtime version) 
-    let tag = target |> createTagName
-    create target (fun _ ->
+    let createRuntime target buildTarget _ =
+        let tag = target |> createTagName
         let runtimeFileVersion = "Dockerfile.runtime"
         let buildArgs = ["RUNTIME_VERSION",version]
-        docker <| Build(Some(runtimeFileVersion),tag,buildArgs,Some "runtime")
-        docker <| Build(Some(runtimeFileVersion),tag + "-debugable",buildArgs,None)
-    )
-    
-    let pushTarget = Targets.Push(target)
-    create pushTarget (fun _ -> 
-        docker <| Push tag
-        docker <| Push (tag + "-debugable")
-    )
+        docker "." <| Build(Some(runtimeFileVersion),tag ,buildArgs,buildTarget)
+        setupTargets target (Targets.Runtime "")
 
-    target ==> (Targets.Runtime "") |> ignore
-    target ==> Targets.Build |> ignore
-    target ==> pushTarget ==> (Targets.Push(Targets.Runtime "")) ==> Targets.PushAll |> ignore
+    let target = Targets.Runtime version
+    create target (createRuntime target (Some "runtime"))
+    let target = Targets.Runtime <| version + "-debugable"
+    create target (createRuntime target None)   
 )
 
 sdkVersions
@@ -168,18 +174,35 @@ sdkVersions
     create target (fun _ ->   
         let buildArgs = ["SDK_VERSION",version]
         let file = Some("Dockerfile.sdk")
-        docker <| Build(file,tag,buildArgs,None)
+        docker "." <| Build(file,tag,buildArgs,None)
     )
 
-    let pushTarget = (Targets.Push(Targets.Sdk version))
-    create pushTarget (fun _ -> docker (Push tag))
+    setupTargets target (Targets.Sdk "")
+)
 
-    target ==> (Targets.Sdk "") |> ignore
-    target ==> Targets.Build |> ignore
-    target ==> pushTarget ==> (Targets.Push(Targets.Sdk "")) ==> Targets.PushAll |> ignore
+let buildAgentsDir = "./build-agents/"
+System.IO.Directory.EnumerateFiles(buildAgentsDir,"Dockerfile.*")
+|> Seq.iter(fun dockerFile ->
+    let target = 
+        (dockerFile
+        |> System.IO.Path.GetExtension).Substring(1)
+        |> Targets.BuildAgent
+    let tag = 
+        target
+        |> createTagName
+    create target (fun _ ->   
+        let file = 
+            dockerFile
+            |> System.IO.Path.GetFileName
+            |> Some
+        docker buildAgentsDir <| Build(file,tag,[],None)
+    )
+
+    setupTargets target (Targets.BuildAgents)
 )
 
 Targets.Build ?=> Targets.PushAll
 
-Targets.Build
+Targets.BuildAgents
+    ==> Targets.Build
 |> runOrDefaultWithArguments 

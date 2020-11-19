@@ -28,12 +28,14 @@ let sdkVersions =
 type Targets = 
   Builder
   | Build
+  | Push
   | Generic of string
 
 let rec targetName = 
     function
        Targets.Builder -> "Builder"
        | Targets.Build -> "Build"
+       | Targets.Push -> "Push"
        | Targets.Generic s -> s
 
 
