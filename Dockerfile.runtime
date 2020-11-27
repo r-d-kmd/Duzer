@@ -1,5 +1,5 @@
 ARG RUNTIME_VERSION=3.1
-FROM mcr.microsoft.com/dotnet/core/aspnet:${RUNTIME_VERSION} as runtime-image
+FROM mcr.microsoft.com/dotnet/aspnet:${RUNTIME_VERSION} as runtime-image
 ARG EXECUTABLE_ARG
 ENV EXECUTABLE = ${EXECUTABLE_ARG}
 ENTRYPOINT dotnet ${EXECUTABLE}

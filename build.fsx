@@ -22,14 +22,13 @@ open Fake.DotNet
 let sdkVersions = 
     [
          "3.1"
+         "5.0"
     ]
 
 [<RequireQualifiedAccess>]
 type Targets = 
    Sdk of version:string
    | Runtime of version:string
-   | BuildAgent of string
-   | BuildAgents
    | Build
    | Push of Targets
    | PushAll
@@ -46,8 +45,6 @@ let rec targetName =
            if version = "" then "Runtime"
            else
                version |> sprintf "Runtime-%s"
-       | Targets.BuildAgent s -> s |> sprintf "BuildAgent %s"
-       | Targets.BuildAgents -> "BuildAgents"
        | Targets.Generic name -> name
        | Targets.Push t -> "Push" + (t |> targetName)
        | Targets.PushAll -> "Push"
@@ -58,7 +55,6 @@ let createTagName target =
         match target with
         Targets.Push t ->
             t |> targetName
-        | Targets.BuildAgent a -> sprintf "buildagent-%s" a
         | _ -> target |> targetName
     let tag = 
         match targetName.ToLower().Split('-') |> List.ofArray with
@@ -129,10 +125,8 @@ let docker workdir command =
 create Targets.Build ignore
 create Targets.PushAll ignore
 create <| Targets.Sdk "" <| ignore
-create <| Targets.BuildAgents <| ignore
 create <| Targets.Runtime "" <| ignore
 create <| Targets.Push(Targets.Sdk "") <| ignore
-create <| Targets.Push(Targets.BuildAgents) <| ignore
 create <| Targets.Push(Targets.Runtime "") <| ignore
 
 let getRuntimeFileVersion conf = 
@@ -180,29 +174,10 @@ sdkVersions
     setupTargets target (Targets.Sdk "")
 )
 
-let buildAgentsDir = "./build-agents/"
-System.IO.Directory.EnumerateFiles(buildAgentsDir,"Dockerfile.*")
-|> Seq.iter(fun dockerFile ->
-    let target = 
-        (dockerFile
-        |> System.IO.Path.GetExtension).Substring(1)
-        |> Targets.BuildAgent
-    let tag = 
-        target
-        |> createTagName
-    create target (fun _ ->   
-        let file = 
-            dockerFile
-            |> System.IO.Path.GetFileName
-            |> Some
-        docker buildAgentsDir <| Build(file,tag,[],None)
-    )
-
-    setupTargets target (Targets.BuildAgents)
-)
+Targets.Sdk "" ==> Targets.Build
+Targets.Runtime "" ==> Targets.Build
 
 Targets.Build ?=> Targets.PushAll
 
-Targets.BuildAgents
-    ==> Targets.Build
+Targets.Build
 |> runOrDefaultWithArguments 

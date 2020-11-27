@@ -1,5 +1,5 @@
 ARG SDK_VERSION=3.1
-FROM mcr.microsoft.com/dotnet/core/sdk:${SDK_VERSION} as sdk-image
+FROM mcr.microsoft.com/dotnet/sdk:${SDK_VERSION} as sdk-image
 FROM sdk-image as sdk
 WORKDIR /source
  

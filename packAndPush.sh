@@ -1,5 +1,5 @@
 #!/bin/bash
-if [[ -< "$VERSION" ]]
+if [[ -z "$VERSION" ]]
 then
    echo "A packet version is required"
    exit 1
