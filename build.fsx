@@ -9,6 +9,9 @@ nuget Fake.DotNet.NuGet //
 nuget Fake.IO.FileSystem //
 nuget Fake.Tools.Git ~> 5 //"
 #load "./.fake/build.fsx/intellisense.fsx"
+#load "./src/Operators.fs"
+#load "./src/Tools.fs"
+#load "./src/Packing.fs"
 
 
 #if !FAKE
@@ -18,7 +21,9 @@ nuget Fake.Tools.Git ~> 5 //"
 
 open Fake.Core
 open Fake.DotNet
-    
+open Kmdrd.Fake.Operators
+open Kmdrd.Fake.Tools
+
 let sdkVersions = 
     [
          "3.1"
@@ -26,40 +31,40 @@ let sdkVersions =
     ]
 
 [<RequireQualifiedAccess>]
+[<NoComparison>]
 type Targets = 
    Sdk of version:string
    | Runtime of version:string
    | PaketBuilder
    | PushPaketBuilder
    | Build
-   | Push of Targets
+   | Push of ITargets
    | PushAll
    | Generic of name:string
+   interface ITargets with
+       member x.Name with get() =
+               match x with
+               | Targets.Sdk version -> 
+                    if version = "" then "Sdk"
+                    else
+                        version |> sprintf "Sdk-%s"
+               | Targets.PaketBuilder -> "PaketBuilder"
+               | Targets.PushPaketBuilder -> "PushPaketBuilder"
+               | Targets.Build -> "Build"
+               | Targets.Runtime version -> 
+                   if version = "" then "Runtime"
+                   else
+                       version |> sprintf "Runtime-%s"
+               | Targets.Generic name -> name
+               | Targets.Push t -> "Push" + (t.Name)
+               | Targets.PushAll -> "Push"
 
-let rec targetName = 
-    function
-       | Targets.Sdk version -> 
-            if version = "" then "Sdk"
-            else
-                version |> sprintf "Sdk-%s"
-       | Targets.PaketBuilder -> "PaketBuilder"
-       | Targets.PushPaketBuilder -> "PushPaketBuilder"
-       | Targets.Build -> "Build"
-       | Targets.Runtime version -> 
-           if version = "" then "Runtime"
-           else
-               version |> sprintf "Runtime-%s"
-       | Targets.Generic name -> name
-       | Targets.Push t -> "Push" + (t |> targetName)
-       | Targets.PushAll -> "Push"
-
-
-let createTagName target = 
+let createTagName (target : Targets) = 
     let targetName = 
         match target with
         Targets.Push t ->
-            t |> targetName
-        | _ -> target |> targetName
+            t.Name
+        | _ -> (target :> ITargets).Name
     let tag = 
         match targetName.ToLower().Split('-') |> List.ofArray with
         [] -> failwith "Must have a name"
@@ -67,35 +72,6 @@ let createTagName target =
         | major::[minor] -> sprintf "%s:%s" major minor
         | major::minor::tail -> sprintf "%s:%s-%s" major minor (System.String.Join("-",tail))
     sprintf "kmdrd/%s" tag
-
-open Fake.Core.TargetOperators
-let inline (==>) (lhs : Targets) (rhs : Targets) =
-    Targets.Generic((targetName lhs) ==> (targetName rhs))
-
-let inline (?=>) (lhs : Targets) (rhs : Targets) =
-    Targets.Generic((targetName lhs) ?=> (targetName rhs))
-
-let create target f = 
-    let targetName = 
-        target
-        |> targetName
-    Target.create targetName f
-
-let runOrDefaultWithArguments =
-    targetName
-    >> Target.runOrDefaultWithArguments 
-
-let run command workingDir args = 
-    let arguments = 
-        match args |> String.split ' ' with
-        [""] -> Arguments.Empty
-        | args -> args |> Arguments.OfArgs
-    RawCommand (command, arguments)
-    |> CreateProcess.fromCommand
-    |> CreateProcess.withWorkingDirectory workingDir
-    |> CreateProcess.ensureExitCode
-    |> Proc.run
-    |> ignore
     
 type DockerCommand = 
     Push of string

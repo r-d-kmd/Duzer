@@ -37,7 +37,7 @@ module Packaging =
             None
 
     open Kmdrd.Fake.Operators
-
+ 
     let private packageVersion() = 
         match Environment.environVarOrNone "PACKAGE_VERSION" with
         None -> 
@@ -63,7 +63,6 @@ module Packaging =
                 build buildConfiguration "./package" projectFile.Value
             )
         | Targets.Package ->
-            
             create Targets.Package (fun _ ->
                 let packages = Directory.EnumerateFiles(srcPath, "*.nupkg")
                 
