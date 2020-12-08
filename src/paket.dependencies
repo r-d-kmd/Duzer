@@ -1,0 +1,12 @@
+source https://api.nuget.org/v3/index.json
+
+storage: none
+framework: auto-detect
+
+nuget Fake ~> 5 
+nuget Fake.Core ~> 5 
+nuget Fake.Core.Target 
+nuget Fake.DotNet 
+nuget Fake.DotNet.Cli 
+nuget Fake.DotNet.NuGet 
+nuget Fake.IO.FileSystem  

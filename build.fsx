@@ -29,6 +29,8 @@ let sdkVersions =
 type Targets = 
    Sdk of version:string
    | Runtime of version:string
+   | PaketBuilder
+   | PushPaketBuilder
    | Build
    | Push of Targets
    | PushAll
@@ -40,6 +42,8 @@ let rec targetName =
             if version = "" then "Sdk"
             else
                 version |> sprintf "Sdk-%s"
+       | Targets.PaketBuilder -> "PaketBuilder"
+       | Targets.PushPaketBuilder -> "PushPaketBuilder"
        | Targets.Build -> "Build"
        | Targets.Runtime version -> 
            if version = "" then "Runtime"
@@ -122,8 +126,16 @@ let docker workdir command =
         System.String.Join(" ",args) 
     run "docker" workdir (arguments.Replace("  "," ").Trim())
 
-create Targets.Build ignore
+create Targets.PaketBuilder (fun _ ->
+    docker "." <| Build(Some "Dockerfile.paket-publisher","kmdrd/paket-publisher",[],None)
+)
+
+create Targets.PushPaketBuilder (fun _ ->
+    docker "." <| Push("kmdrd/paket-publisher")
+)
+
 create Targets.PushAll ignore
+create Targets.Build ignore
 create <| Targets.Sdk "" <| ignore
 create <| Targets.Runtime "" <| ignore
 create <| Targets.Push(Targets.Sdk "") <| ignore
@@ -176,7 +188,9 @@ sdkVersions
 
 Targets.Sdk "" ==> Targets.Build
 Targets.Runtime "" ==> Targets.Build
-
+Targets.PaketBuilder ==> Targets.Build
+Targets.PaketBuilder ==> Targets.PushPaketBuilder
+Targets.PushPaketBuilder ==> Targets.PushAll
 Targets.Build ?=> Targets.PushAll
 
 Targets.Build

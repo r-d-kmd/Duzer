@@ -1,2 +1,9 @@
-tests/test/src/obj
 .fake
+.vscode
+.ionide
+src/bin/
+src/obj/
+tests/test/.fake
+tests/test/obj/
+tests/test/src/bin/
+tests/test/src/obj/

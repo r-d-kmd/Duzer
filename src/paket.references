@@ -1,0 +1,7 @@
+Fake
+Fake.Core
+Fake.Core.Target 
+Fake.DotNet 
+Fake.DotNet.Cli 
+Fake.DotNet.NuGet 
+Fake.IO.FileSystem

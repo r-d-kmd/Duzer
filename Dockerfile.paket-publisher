@@ -1,9 +1,13 @@
-ARG RUNTIME_VERSION=3.1
+ARG RUNTIME_VERSION=5.0
 FROM kmdrd/sdk:${RUNTIME_VERSION} AS build
 ENV BUILD_ENV=docker
 RUN mkdir /tools
 
+RUN apt-get update
+RUN apt-get install -y bash
+
 COPY ./packAndPush.sh /tools
+RUN chmod +x /tools/packAndPush.sh
 RUN rm -f *.nupkg
 
 #nuget packet version
@@ -16,7 +20,7 @@ ENV FEED_PAT=""
 
 #nuget feed to push to. Can be a private in which case FEED_USER and FEED_PASSWORD or FEED_PAT must be specified
 #For Azure Artefacts FEED_PAT must be the private access token to use for authentication
-ENV FEED_URL="https://api.nuget.org/v3"
+ENV FEED_URL="https://api.nuget.org/v3/index.json"
 
 #If an api key is required to push packages to the feed"
 ENV API_KEY=""
