@@ -1,4 +1,4 @@
-namespace Kmdrd.Fake
+namespace Kmdrd.Duzer
 
 open Fake.Core
 open Fake
@@ -37,3 +37,6 @@ module Tools =
                                        }    
                             }
                        ) projectFile
+    
+    
+        

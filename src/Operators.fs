@@ -1,4 +1,4 @@
-namespace Kmdrd.Fake
+namespace Kmdrd.Duzer
 
 open Fake.Core.TargetOperators
 open Fake.Core
@@ -6,8 +6,18 @@ open Fake.Core
 module Operators = 
     type ITargets =
         abstract member Name: string with get
-    
-    let mutable private targets = Set.empty
+    [<Literal>]
+    let private AllTargetName = "all"
+    let mutable private targets =
+        
+        Target.create AllTargetName ignore
+        [AllTargetName] |> Set.ofList
+
+    let create (target : ITargets) f = 
+        target.Name
+        |> Target.create <| f
+        target.Name ==> "all" |> ignore
+        targets <- Set.add target.Name targets
 
     let (==>) (lhs : ITargets) (rhs : ITargets) =
         if targets.Contains lhs.Name && targets.Contains rhs.Name then
@@ -21,11 +31,6 @@ module Operators =
 
     let (<===) (lhs : ITargets) (rhs : ITargets) =
         rhs ==> lhs //deliberately changing order of arguments
-
-    let create (target : ITargets) f = 
-        target.Name
-        |> Target.create <| f
-        targets <- Set.add target.Name targets
 
     let runOrDefaultWithArguments (target: ITargets) =
         target.Name

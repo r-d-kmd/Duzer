@@ -1,11 +1,12 @@
-namespace Kmdrd.Fake
+namespace Kmdrd.Duzer
 
 open Fake.Core
 open Fake
 open Fake.DotNet
 open Fake.IO
 open System.IO
-open Kmdrd.Fake.Tools
+open Kmdrd.Duzer.Tools
+open Kmdrd.Duzer.Operators
 
 module Packaging = 
     [<RequireQualifiedAccess>]
@@ -35,8 +36,6 @@ module Packaging =
             |> Seq.tryExactlyOne
         else
             None
-
-    open Kmdrd.Fake.Operators
  
     let private packageVersion() = 
         match Environment.environVarOrNone "PACKAGE_VERSION" with
