@@ -8,9 +8,7 @@ trigger:
 
 pool:
   vmImage: ubuntu-latest
-variables:
-   du: $(DOCKER_USER)
-   dp: $(DOCKER_PASS)
+
 
 steps:
 - script: |
@@ -26,6 +24,9 @@ steps:
 
 - script: docker login -u="$du" -p="$dp"
   displayName: Docker login
+  env:
+    du: $(DOCKER_USER)
+    dp: $(DOCKER_PASS)
 
 - script: |
     dotnet fake build --target push
