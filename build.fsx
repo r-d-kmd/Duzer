@@ -49,15 +49,25 @@ type Targets =
                | Targets.PushAll -> "Push"
 
 let docker = Docker(".","kmdrd")
+let paketBuilder = Targets.Generic("package") :> ITargets
+create paketBuilder ignore
+let pushPaketBuilder = Targets.Generic("pushPackage") :> ITargets
+create pushPaketBuilder ignore
 
-let paketBuilder =
-    docker.Build("paket-publisher",
-                  file = "Dockerfile.paket-publisher"
-                )
-
-
-let pushPaketBuilder =
-    docker.Push "paket-publisher"
+sdkVersions
+|> List.sortDescending
+|> List.fold(fun vNext sdkVersion ->
+    let target = 
+        docker.Build("paket-publisher:" + sdkVersion,["RUNTIME_VERSION",sdkVersion],
+                      file = "Dockerfile.paket-publisher"
+                    ) 
+    target ==> paketBuilder |> ignore
+    let pushTarget = docker.Push ("paket-publisher:" + sdkVersion)
+    target ?=> pushTarget |> ignore
+    //making lower versions a dependency to higher ensures that we can do all jobs in parallel without affecting :latest
+    pushTarget ?=> vNext  |> ignore
+    pushTarget
+) pushPaketBuilder
 
 create Targets.PushAll ignore
 create Targets.Build ignore
@@ -113,8 +123,8 @@ sdkVersions
 )
 
 pushPaketBuilder ==> Targets.PushAll
+paketBuilder ==> Targets.PushAll
 paketBuilder ==> Targets.Build
-pushPaketBuilder ?=> pushPaketBuilder
 Targets.Build ?=> Targets.PushAll
 
 Targets.Build

@@ -15,7 +15,7 @@ module Docker =
             let target = (DockerTarget(sprintf "%s-%s-%s" dockerOperationName org tag) :> ITargets)
             create target f
             target
-        member __.Push tag =
+        member __.Push (tag : string) =
             createTarget "push" tag (fun _ -> docker <| sprintf "push %s/%s" org tag)
         member x.Build(tag : string,?file : string,?target : string) =
             match file,target with
@@ -27,6 +27,7 @@ module Docker =
             | Some f, Some t ->
                 x.Build(tag,[], file=f, target=t)
         member __.Build(tag, buildArgs, ?file, ?target) =
+            let tag = sprintf "%s/%s" org tag
             let arguments = 
                 let buildArgs = 
                     System.String.Join(" ", 

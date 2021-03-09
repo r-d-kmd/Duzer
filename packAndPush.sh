@@ -17,10 +17,14 @@ LightGray='\033[0;37m'
 White='\033[1;37m'
 NoColor='\033[0m\n'
 
+function log(){
+    printf "${LightCyan}$1${NoColor}"
+}
+
 if [[ -z "$VERSION" ]]
 then
    echo "A packet version is required. '$VERSION' is not a version"
-   exit 1
+   exit 3
 fi
 
 if [[ ! -z $FEED_PAT ]]
@@ -35,11 +39,15 @@ then
     curl -L https://raw.githubusercontent.com/Microsoft/artifacts-credprovider/master/helpers/installcredprovider.sh  | sh
     echo "<?xml version=\"1.0\" encoding=\"utf-8\"?><configuration><packageSources><clear /><add key=\"KMD_Package_Feed\" value=\"${FEED_URL}\" /></packageSources></configuration>" >> nuget.config
 fi
+
+log "Restore tools"
 dotnet tool restore
 
 cd src
-printf "$Green packaging $VERSION $NoColor"
-dotnet paket pack --version "$VERSION" . 
+BUILD_VERSION=$VERSION
+printf "$Green packaging with build version: $VERSION $NoColor"
+
+dotnet pack -c Release
 RESULT=$?
 
 if [[ "$RESULT" > 0 ]]
