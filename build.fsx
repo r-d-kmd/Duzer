@@ -100,7 +100,7 @@ sdkVersions
                   buildArgs = buildArgs
                 )
         let pushTarget = docker.Push tag
-        buildTarget ?=> pushTarget  |> ignore
+        buildTarget ==> pushTarget  |> ignore
         pushTarget ==> Targets.PushAll |> ignore
         
 
@@ -118,7 +118,7 @@ sdkVersions
                               buildArgs = buildArgs
                             )
     let pushTarget = docker.Push tag
-    buildTarget ?=> pushTarget  |> ignore
+    buildTarget ==> pushTarget  |> ignore
     pushTarget ==> Targets.PushAll |> ignore
 )
 
