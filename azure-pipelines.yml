@@ -31,12 +31,14 @@ steps:
 - script: |
     dotnet fake build --target push --parallel 4
   displayName: 'Build and push docker images'
+  
 - task: DotNetCoreCLI@2
   displayName: "Installing packages" 
   inputs:
     command: 'custom'
     custom: 'paket'
     arguments: 'update'
+    workingDirectory: 'src/'
 - task: DotNetCoreCLI@2
   displayName: "Pack kmdrd.Fake"
   inputs:
