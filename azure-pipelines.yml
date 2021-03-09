@@ -1,0 +1,43 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- script: |
+    if [ ! -f ".config/dotnet-tools.json" ]
+    then
+      dotnet new tool-manifest
+      dotnet tool install paket
+      dotnet tool install fake
+    else
+      dotnet tool restore
+    fi
+  displayName: 'Install build tools'
+
+- script: |
+    dotnet fake build --target push
+  displayName: 'Build and push docker images'
+  
+- task: DotNetCoreCLI@2
+  displayName: "Pack kmdrd.Fake"
+  inputs:
+    command: 'pack'
+    packagesToPack: 'src/*.fsproj'
+    versioningScheme: 'off'
+
+- task: NuGetAuthenticate@0
+  displayName: 'NuGet Authenticate'
+- task: DotNetCoreCLI@2
+  displayName: "Push the Kmdrd.FAKE"
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: '45c29cd0-03bf-4f63-ac71-3c366095dda9/2447d53d-0348-4176-b5f4-4c55ed2d94c3'
