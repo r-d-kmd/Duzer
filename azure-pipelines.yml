@@ -9,8 +9,8 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 variables:
-   du: "$DOCKER_USER" 
-   dp: "$DOCKER_PASS"
+   du: $(DOCKER_USER)
+   dp: $(DOCKER_PASS)
 
 steps:
 - script: |
