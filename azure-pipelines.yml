@@ -9,6 +9,10 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  MAJOR: 1
+  MINOR: 1
+  BUILD_VERSION: $[counter(variables['MINOR'], 0)]
 
 steps:
 - script: |
