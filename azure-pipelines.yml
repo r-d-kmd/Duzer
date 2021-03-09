@@ -29,7 +29,7 @@ steps:
     dp: $(DOCKER_PASS)
 
 - script: |
-    dotnet fake build --target push
+    dotnet fake build --target push --parallel 4
   displayName: 'Build and push docker images'
   
 - task: DotNetCoreCLI@2
