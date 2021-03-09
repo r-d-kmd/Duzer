@@ -125,7 +125,7 @@ sdkVersions
 pushPaketBuilder ==> Targets.PushAll
 paketBuilder ==> Targets.PushAll
 paketBuilder ==> Targets.Build
-Targets.Build ?=> Targets.PushAll
+Targets.Build ==> Targets.PushAll
 
 Targets.Build
 |> runOrDefaultWithArguments 
